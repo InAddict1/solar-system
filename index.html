@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système Solaire Échelle Réelle - Soleil à Neptune</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010104;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #fff;
+        }
+
+        #webgl-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* --- INTERFACE DE CONTRÔLE --- */
+        #ui-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(12, 16, 26, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            transition: all 0.25s ease;
+        }
+
+        #ui-toggle:hover {
+            background: rgba(25, 35, 55, 0.95);
+            border-color: #4facfe;
+            box-shadow: 0 0 12px rgba(79, 172, 254, 0.4);
+        }
+
+        #ui-toggle .arrow {
+            transition: transform 0.3s;
+        }
+
+        #ui-toggle.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            background: rgba(10, 14, 22, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 16px;
+            width: 380px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+            z-index: 90;
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #ui-panel.open {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8a99ad;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+
+        .focus-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+
+        .btn-focus {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 2px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .btn-focus:hover {
+            background: rgba(79, 172, 254, 0.25);
+            border-color: #4facfe;
+        }
+
+        .btn-focus.active {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            border-color: #00f2fe;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #ccc;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin-top: 4px;
+            accent-color: #4facfe;
+            cursor: pointer;
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #info-card {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(12, 16, 26, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #d1d5db;
+            z-index: 10;
+            line-height: 1.4;
+        }
+
+        #info-card span {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            #ui-toggle { top: 15px; left: 15px; }
+            #ui-panel { top: 65px; left: 15px; width: calc(100% - 30px); }
+            #info-card { bottom: 15px; left: 15px; font-size: 0.75rem; }
+            .focus-buttons { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <button id="ui-toggle">
+        🌐 <span>Contrôles</span>
+        <span class="arrow">▼</span>
+    </button>
+
+    <div id="ui-panel">
+        <h1>Échelle Réelle (1:1 Proportions)</h1>
+        
+        <div class="section-title">Changer le Focus</div>
+        <div class="focus-buttons">
+            <button class="btn-focus" id="btn-sun">☀️<span>Soleil</span></button>
+            <button class="btn-focus" id="btn-mercury">☿️<span>Mercure</span></button>
+            <button class="btn-focus" id="btn-venus">♀️<span>Vénus</span></button>
+            <button class="btn-focus active" id="btn-earth">🌍<span>Terre</span></button>
+            <button class="btn-focus" id="btn-moon">🌙<span>Lune</span></button>
+            <button class="btn-focus" id="btn-mars">♂️<span>Mars</span></button>
+            <button class="btn-focus" id="btn-jupiter">♃<span>Jupiter</span></button>
+            <button class="btn-focus" id="btn-saturn">🪐<span>Saturne</span></button>
+            <button class="btn-focus" id="btn-uranus">💎<span>Uranus</span></button>
+            <button class="btn-focus" id="btn-neptune">🔵<span>Neptune</span></button>
+        </div>
+
+        <div class="section-title">Vitesse d'orbitation</div>
+        <div class="control-group">
+            <div class="slider-container">
+                <span>Vitesse temporelle</span>
+                <span id="speed-val">1x</span>
+            </div>
+            <input type="range" id="speed-slider" min="0" max="5" step="0.1" value="1">
+            <button class="btn-action" id="btn-pause">⏸️ Pause / Reprendre</button>
+        </div>
+    </div>
+
+    <div id="info-card">
+        Cible : <span id="current-target">Terre</span><br>
+        Échelle : <span style="color:#aaa;">Distances & Diamètres Exacts NASA</span>
+    </div>
+
+    <div id="webgl-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 1. CONSTANTES & RATIOS D'ÉCHELLE EXACTS ---
+        const KM_PER_UNIT = 6371;
+
+        const EARTH_RADIUS = 1.0;                             // 12 742 km / 2 / 6371
+        const MOON_RADIUS = (3474 / 2) / KM_PER_UNIT;         // ~0.2726
+        const MERCURY_RADIUS = (4879 / 2) / KM_PER_UNIT;      // ~0.3829
+        const VENUS_RADIUS = (12104 / 2) / KM_PER_UNIT;        // ~0.9499
+        const MARS_RADIUS = (6779 / 2) / KM_PER_UNIT;          // ~0.5320
+        const JUPITER_RADIUS = (139822 / 2) / KM_PER_UNIT;     // ~10.9733
+        const SATURN_RADIUS = (120536 / 2) / KM_PER_UNIT;      // ~9.4597
+        const URANUS_RADIUS = (50724 / 2) / KM_PER_UNIT;       // ~3.9808
+        const NEPTUNE_RADIUS = (49244 / 2) / KM_PER_UNIT;      // ~3.8647
+        const SUN_RADIUS = (1392684 / 2) / KM_PER_UNIT;       // ~109.30
+
+        const DIST_MERCURY_SUN = 57909050 / KM_PER_UNIT;     // ~9 089.47
+        const DIST_VENUS_SUN = 108208000 / KM_PER_UNIT;       // ~16 984.46
+        const DIST_EARTH_SUN = 149597870.7 / KM_PER_UNIT;     // ~23 481.07
+        const DIST_EARTH_MOON = 384400 / KM_PER_UNIT;         // ~60.34
+        const DIST_MARS_SUN = 227939200 / KM_PER_UNIT;        // ~35 777.62
+        const DIST_JUPITER_SUN = 778570000 / KM_PER_UNIT;     // ~122 205.30
+        const DIST_SATURN_SUN = 1433530000 / KM_PER_UNIT;     // ~224 992.94
+        const DIST_URANUS_SUN = 2870972200 / KM_PER_UNIT;     // ~450 631.33
+        const DIST_NEPTUNE_SUN = 4495060000 / KM_PER_UNIT;    // ~705 550.15
+
+        // --- 2. INITIALISATION SCÈNE, CAMÉRA & RENDERER ---
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 5000000);
+        
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            logarithmicDepthBuffer: true
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 3000000;
+        controls.minDistance = 0.05;
+
+        // --- 3. TEXTURES NASA & FALLBACKS ---
+        const textureLoader = new THREE.TextureLoader();
+
+        function createColorFallback(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = colorHex;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const sunTexture = textureLoader.load(
+            'https://sdmntprnortheu.oaiusercontent.com/files/00000000-a280-81f4-bb47-ea5201d2f594/raw?se=2026-08-25T11%3A59%3A56Z&sp=r&sv=2026-02-06&sr=b&scid=eff4b99b-c8dc-495c-aaba-bfbb0193dfe0&skoid=5c9dda00-298b-4376-81e9-b4568c8a3c0f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-25T07%3A19%3A26Z&ske=2026-08-26T07%3A19%3A26Z&sks=b&skv=2026-02-06&sig=iDf7JHA6tEtoSoMOE4oyZ8RAae9882hEtH/HwFZJrL8%3D',
+            undefined, undefined,
+            () => { sunMaterial.map = createColorFallback('#ffcc00'); sunMaterial.needsUpdate = true; }
+        );
+
+        const mercuryTexture = textureLoader.load(
+            'https://imgs.search.brave.com/RnYBTZdaqx3FUApYon9C637ZGRLVp2qFUNO5rzksaKs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy85/LzkyL1NvbGFyc3lz/dGVtc2NvcGVfdGV4/dHVyZV8ya19tZXJj/dXJ5LmpwZw',
+            undefined, undefined,
+            () => { mercuryMaterial.map = createColorFallback('#888888'); mercuryMaterial.needsUpdate = true; }
+        );
+
+        const venusTexture = textureLoader.load(
+            'https://imgs.search.brave.com/le5duks1AkQDuY8fIMyNfW9fz9CLGqZ0c0rtkyupr5E/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/ZnV0dXJhLXNjaWVu/Y2VzLmNvbS9zb3Vy/Y2VzL2ltYWdlcy9k/aWFwb3JhbWEvNTIx/LXZlbnVzL3ZlNy5q/cGc',
+            undefined, undefined,
+            () => { venusMaterial.map = createColorFallback('#e3bb76'); venusMaterial.needsUpdate = true; }
+        );
+
+        const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+        const moonTexture = textureLoader.load('https://imgs.search.brave.com/Ypc98r3cD1nESOGWDPFaTD087Et8bkgpFIWWCqVpsKg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9k/L2RiL01vb25tYXBf/ZnJvbV9jbGVtZW50/aW5lX2RhdGEucG5n');
+
+        const marsTexture = textureLoader.load(
+            'https://imgs.search.brave.com/lPtcoXC0eO6uJD7SgJrnYZ_wIAayb_pENJUi1IHBryo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9hc3Nl/dHMuc2NpZW5jZS5u/YXNhLmdvdi9keW5h/bWljaW1hZ2UvYXNz/ZXRzL3NjaWVuY2Uv/bWlzc2lvbnMvaHVi/YmxlL3JlbGVhc2Vz/LzIwMDcvMTIvU1RT/Y0ktMDFFVlQ2UE1a/UVNBRTlTNUMzSzla/MlRFTkcudGlmP3c9/MjAwMA',
+            undefined, undefined,
+            () => { marsMaterial.map = createColorFallback('#c1440e'); marsMaterial.needsUpdate = true; }
+        );
+
+        const jupiterTexture = textureLoader.load(
+            'https://imgs.search.brave.com/t83OA-i8O6klGq2w_6zpjqD5A3Tn62k19NsVlz2EdV4/rs:fit:860:0:0:0/g:ce/aHR0cDovL3d3dy5h/c3Ryb3N1cmYuY29t/L2x1eG9yaW9uL0ls/bHVzdHJhdGlvbnMv/anVwaXRlci1wbGFu/aXNwaGVyZS1oc3Qt/amFuMjAxNXMuanBn',
+            undefined, undefined,
+            () => { jupiterMaterial.map = createColorFallback('#b07f35'); jupiterMaterial.needsUpdate = true; }
+        );
+
+        const saturnTexture = textureLoader.load(
+            'VOTRE_LIEN_TEXTURE_SATURNE_ICI',
+            undefined, undefined,
+            () => { saturnMaterial.map = createColorFallback('#e0cda3'); saturnMaterial.needsUpdate = true; }
+        );
+
+        const uranusTexture = textureLoader.load(
+            'VOTRE_LIEN_TEXTURE_URANUS_ICI',
+            undefined, undefined,
+            () => { uranusMaterial.map = createColorFallback('#7de6ef'); uranusMaterial.needsUpdate = true; }
+        );
+
+        const neptuneTexture = textureLoader.load(
+            'VOTRE_LIEN_TEXTURE_NEPTUNE_ICI',
+            undefined, undefined,
+            () => { neptuneMaterial.map = createColorFallback('#2b65ec'); neptuneMaterial.needsUpdate = true; }
+        );
+
+        // --- 4. ÉCLAIRAGE SOLAIRE ---
+        const ambientLight = new THREE.AmbientLight(0x111122, 0.6);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.PointLight(0xffffff, 5.0, 5000000, 0.0);
+        scene.add(sunLight);
+
+        // --- 5. CRÉATION DES ASTRES ---
+
+        // --- SOLEIL ---
+        const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS, 64, 64);
+        const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture });
+        const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sunMesh);
+
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+            grad.addColorStop(0, 'rgba(255, 230, 150, 1)');
+            grad.addColorStop(0.2, 'rgba(255, 140, 20, 0.5)');
+            grad.addColorStop(0.6, 'rgba(255, 50, 0, 0.08)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 256);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const sunGlowMaterial = new THREE.SpriteMaterial({
+            map: createGlowTexture(),
+            color: 0xffaa33,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            opacity: 0.85
+        });
+        const sunGlow = new THREE.Sprite(sunGlowMaterial);
+        sunGlow.scale.set(SUN_RADIUS * 2.8, SUN_RADIUS * 2.8, 1.0);
+        sunMesh.add(sunGlow);
+
+        // --- MERCURE ---
+        const mercuryPivot = new THREE.Group();
+        scene.add(mercuryPivot);
+
+        const mercuryGeometry = new THREE.SphereGeometry(MERCURY_RADIUS, 32, 32);
+        const mercuryMaterial = new THREE.MeshStandardMaterial({
+            map: mercuryTexture,
+            roughness: 0.8
+        });
+        const mercuryMesh = new THREE.Mesh(mercuryGeometry, mercuryMaterial);
+        mercuryMesh.position.x = DIST_MERCURY_SUN;
+        mercuryPivot.add(mercuryMesh);
+
+        // --- VÉNUS ---
+        const venusPivot = new THREE.Group();
+        scene.add(venusPivot);
+
+        const venusGeometry = new THREE.SphereGeometry(VENUS_RADIUS, 32, 32);
+        const venusMaterial = new THREE.MeshStandardMaterial({
+            map: venusTexture,
+            roughness: 0.7
+        });
+        const venusMesh = new THREE.Mesh(venusGeometry, venusMaterial);
+        venusMesh.position.x = DIST_VENUS_SUN;
+        venusMesh.rotation.z = THREE.MathUtils.degToRad(177.3);
+        venusPivot.add(venusMesh);
+
+        // --- TERRE & LUNE ---
+        const earthPivot = new THREE.Group();
+        scene.add(earthPivot);
+
+        const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 32, 32);
+        const earthMaterial = new THREE.MeshStandardMaterial({
+            map: earthTexture,
+            roughness: 0.65,
+            metalness: 0.1
+        });
+        const earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
+        earthMesh.position.x = DIST_EARTH_SUN;
+        earthMesh.rotation.z = THREE.MathUtils.degToRad(23.44);
+        earthPivot.add(earthMesh);
+
+        const atmosphereMat = new THREE.MeshBasicMaterial({
+            color: 0x00aaff,
+            transparent: true,
+            opacity: 0.18,
+            side: THREE.BackSide
+        });
+        const atmosphereMesh = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS * 1.05, 32, 32), atmosphereMat);
+        earthMesh.add(atmosphereMesh);
+
+        const moonPivot = new THREE.Group();
+        earthMesh.add(moonPivot);
+
+        const moonGeometry = new THREE.SphereGeometry(MOON_RADIUS, 32, 32);
+        const moonMaterial = new THREE.MeshStandardMaterial({
+            map: moonTexture,
+            roughness: 0.9
+        });
+        const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+        moonMesh.position.x = DIST_EARTH_MOON;
+        moonPivot.add(moonMesh);
+
+        // --- MARS ---
+        const marsPivot = new THREE.Group();
+        scene.add(marsPivot);
+
+        const marsGeometry = new THREE.SphereGeometry(MARS_RADIUS, 32, 32);
+        const marsMaterial = new THREE.MeshStandardMaterial({
+            map: marsTexture,
+            roughness: 0.8
+        });
+        const marsMesh = new THREE.Mesh(marsGeometry, marsMaterial);
+        marsMesh.position.x = DIST_MARS_SUN;
+        marsMesh.rotation.z = THREE.MathUtils.degToRad(25.19);
+        marsPivot.add(marsMesh);
+
+        // --- JUPITER ---
+        const jupiterPivot = new THREE.Group();
+        scene.add(jupiterPivot);
+
+        const jupiterGeometry = new THREE.SphereGeometry(JUPITER_RADIUS, 64, 64);
+        const jupiterMaterial = new THREE.MeshStandardMaterial({
+            map: jupiterTexture,
+            roughness: 0.6
+        });
+        const jupiterMesh = new THREE.Mesh(jupiterGeometry, jupiterMaterial);
+        jupiterMesh.position.x = DIST_JUPITER_SUN;
+        jupiterMesh.rotation.z = THREE.MathUtils.degToRad(3.13);
+        jupiterPivot.add(jupiterMesh);
+
+        // --- SATURNE ---
+        const saturnPivot = new THREE.Group();
+        scene.add(saturnPivot);
+
+        const saturnGeometry = new THREE.SphereGeometry(SATURN_RADIUS, 64, 64);
+        const saturnMaterial = new THREE.MeshStandardMaterial({
+            map: saturnTexture,
+            roughness: 0.6
+        });
+        const saturnMesh = new THREE.Mesh(saturnGeometry, saturnMaterial);
+        saturnMesh.position.x = DIST_SATURN_SUN;
+        saturnMesh.rotation.z = THREE.MathUtils.degToRad(26.73);
+        saturnPivot.add(saturnMesh);
+
+        // Anneaux de Saturne
+        const saturnRingGeometry = new THREE.RingGeometry(SATURN_RADIUS * 1.2, SATURN_RADIUS * 2.3, 64);
+        saturnRingGeometry.rotateX(Math.PI / 2);
+        const saturnRingMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc2ab7c,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        const saturnRingMesh = new THREE.Mesh(saturnRingGeometry, saturnRingMaterial);
+        saturnMesh.add(saturnRingMesh);
+
+        // --- URANUS ---
+        const uranusPivot = new THREE.Group();
+        scene.add(uranusPivot);
+
+        const uranusGeometry = new THREE.SphereGeometry(URANUS_RADIUS, 64, 64);
+        const uranusMaterial = new THREE.MeshStandardMaterial({
+            map: uranusTexture,
+            roughness: 0.5
+        });
+        const uranusMesh = new THREE.Mesh(uranusGeometry, uranusMaterial);
+        uranusMesh.position.x = DIST_URANUS_SUN;
+        // Uranus a un axe d'inclinaison quasi-horizontal unique (97,77°)
+        uranusMesh.rotation.z = THREE.MathUtils.degToRad(97.77);
+        uranusPivot.add(uranusMesh);
+
+        // Anneaux fins et verticaux d'Uranus
+        const uranusRingGeometry = new THREE.RingGeometry(URANUS_RADIUS * 1.4, URANUS_RADIUS * 1.8, 64);
+        uranusRingGeometry.rotateX(Math.PI / 2);
+        const uranusRingMaterial = new THREE.MeshStandardMaterial({
+            color: 0x9bebf2,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.4
+        });
+        const uranusRingMesh = new THREE.Mesh(uranusRingGeometry, uranusRingMaterial);
+        uranusMesh.add(uranusRingMesh);
+
+        // --- NEPTUNE ---
+        const neptunePivot = new THREE.Group();
+        scene.add(neptunePivot);
+
+        const neptuneGeometry = new THREE.SphereGeometry(NEPTUNE_RADIUS, 64, 64);
+        const neptuneMaterial = new THREE.MeshStandardMaterial({
+            map: neptuneTexture,
+            roughness: 0.5
+        });
+        const neptuneMesh = new THREE.Mesh(neptuneGeometry, neptuneMaterial);
+        neptuneMesh.position.x = DIST_NEPTUNE_SUN;
+        neptuneMesh.rotation.z = THREE.MathUtils.degToRad(28.32);
+        neptunePivot.add(neptuneMesh);
+
+        // --- 6. TRACÉS DES ORBITES ---
+        createOrbitLine(DIST_MERCURY_SUN, 0xaaaaaa, scene);
+        createOrbitLine(DIST_VENUS_SUN, 0xe3bb76, scene);
+        createOrbitLine(DIST_EARTH_SUN, 0x4facfe, scene);
+        createOrbitLine(DIST_EARTH_MOON, 0x888888, earthMesh);
+        createOrbitLine(DIST_MARS_SUN, 0xc1440e, scene);
+        createOrbitLine(DIST_JUPITER_SUN, 0xb07f35, scene);
+        createOrbitLine(DIST_SATURN_SUN, 0xe0cda3, scene);
+        createOrbitLine(DIST_URANUS_SUN, 0x7de6ef, scene);
+        createOrbitLine(DIST_NEPTUNE_SUN, 0x2b65ec, scene);
+
+        // --- 7. CHAMP D'ÉTOILES ---
+        createStarfield();
+
+        // --- 8. SYSTÈME DE FOCUS DYNAMIQUE ---
+        let currentFocus = 'earth';
+        const targetWorldPosition = new THREE.Vector3();
+        let isPaused = false;
+        let timeSpeed = 1.0;
+
+        const initialCameraOffsets = {
+            sun: new THREE.Vector3(0, SUN_RADIUS * 0.4, SUN_RADIUS * 2.2),
+            mercury: new THREE.Vector3(MERCURY_RADIUS * 3, MERCURY_RADIUS * 1.5, MERCURY_RADIUS * 4),
+            venus: new THREE.Vector3(VENUS_RADIUS * 3, VENUS_RADIUS * 1.5, VENUS_RADIUS * 4),
+            earth: new THREE.Vector3(EARTH_RADIUS * 3, EARTH_RADIUS * 1.5, EARTH_RADIUS * 4),
+            moon: new THREE.Vector3(MOON_RADIUS * 3, MOON_RADIUS * 1.5, MOON_RADIUS * 4),
+            mars: new THREE.Vector3(MARS_RADIUS * 3, MARS_RADIUS * 1.5, MARS_RADIUS * 4),
+            jupiter: new THREE.Vector3(JUPITER_RADIUS * 2.5, JUPITER_RADIUS * 1.2, JUPITER_RADIUS * 3.5),
+            saturn: new THREE.Vector3(SATURN_RADIUS * 2.5, SATURN_RADIUS * 1.2, SATURN_RADIUS * 3.5),
+            uranus: new THREE.Vector3(URANUS_RADIUS * 3, URANUS_RADIUS * 1.5, URANUS_RADIUS * 4),
+            neptune: new THREE.Vector3(NEPTUNE_RADIUS * 3, NEPTUNE_RADIUS * 1.5, NEPTUNE_RADIUS * 4)
+        };
+
+        function getTargetMesh(name) {
+            switch(name) {
+                case 'sun': return sunMesh;
+                case 'mercury': return mercuryMesh;
+                case 'venus': return venusMesh;
+                case 'earth': return earthMesh;
+                case 'moon': return moonMesh;
+                case 'mars': return marsMesh;
+                case 'jupiter': return jupiterMesh;
+                case 'saturn': return saturnMesh;
+                case 'uranus': return uranusMesh;
+                case 'neptune': return neptuneMesh;
+            }
+        }
+
+        function setFocus(targetName) {
+            currentFocus = targetName;
+
+            document.querySelectorAll('.btn-focus').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${targetName}`).classList.add('active');
+            
+            const labels = { 
+                sun: 'Soleil', 
+                mercury: 'Mercure', 
+                venus: 'Vénus', 
+                earth: 'Terre', 
+                moon: 'Lune',
+                mars: 'Mars',
+                jupiter: 'Jupiter',
+                saturn: 'Saturne',
+                uranus: 'Uranus',
+                neptune: 'Neptune'
+            };
+            document.getElementById('current-target').textContent = labels[targetName];
+
+            const targetMesh = getTargetMesh(targetName);
+            targetMesh.getWorldPosition(targetWorldPosition);
+
+            const offset = initialCameraOffsets[targetName];
+            camera.position.copy(targetWorldPosition).add(offset);
+            controls.target.copy(targetWorldPosition);
+        }
+
+        // --- 9. BOUCLE D'ANIMATION ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            if (!isPaused) {
+                const speed = delta * timeSpeed;
+
+                // Rotations axiales
+                sunMesh.rotation.y += speed * 0.02;
+                mercuryMesh.rotation.y += speed * 0.05;
+                venusMesh.rotation.y -= speed * 0.03;
+                earthMesh.rotation.y += speed * 0.5;
+                moonMesh.rotation.y += speed * 0.1;
+                marsMesh.rotation.y += speed * 0.48;
+                jupiterMesh.rotation.y += speed * 1.2;
+                saturnMesh.rotation.y += speed * 1.0;
+                uranusMesh.rotation.y -= speed * 0.7; // Rotation rétrograde
+                neptuneMesh.rotation.y += speed * 0.7;
+
+                // Révolutions orbitales
+                mercuryPivot.rotation.y += speed * 0.62;
+                venusPivot.rotation.y += speed * 0.24;
+                earthPivot.rotation.y += speed * 0.15;
+                moonPivot.rotation.y += speed * 0.25;
+                marsPivot.rotation.y += speed * 0.08;
+                jupiterPivot.rotation.y += speed * 0.013;
+                saturnPivot.rotation.y += speed * 0.005;
+                uranusPivot.rotation.y += speed * 0.0018;
+                neptunePivot.rotation.y += speed * 0.0012;
+            }
+
+            // Suivi dynamique de la cible sélectionnée
+            const activeMesh = getTargetMesh(currentFocus);
+            const previousTarget = controls.target.clone();
+            activeMesh.getWorldPosition(targetWorldPosition);
+            
+            controls.target.lerp(targetWorldPosition, 0.1);
+            
+            const deltaMove = controls.target.clone().sub(previousTarget);
+            camera.position.add(deltaMove);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- 10. GESTION DES ÉVÉNEMENTS UI ---
+        const uiToggle = document.getElementById('ui-toggle');
+        const uiPanel = document.getElementById('ui-panel');
+
+        uiToggle.addEventListener('click', () => {
+            const isOpen = uiPanel.classList.contains('open');
+            if (isOpen) {
+                uiPanel.classList.remove('open');
+                uiToggle.classList.remove('open');
+            } else {
+                uiPanel.classList.add('open');
+                uiToggle.classList.add('open');
+            }
+        });
+
+        document.getElementById('btn-sun').addEventListener('click', () => setFocus('sun'));
+        document.getElementById('btn-mercury').addEventListener('click', () => setFocus('mercury'));
+        document.getElementById('btn-venus').addEventListener('click', () => setFocus('venus'));
+        document.getElementById('btn-earth').addEventListener('click', () => setFocus('earth'));
+        document.getElementById('btn-moon').addEventListener('click', () => setFocus('moon'));
+        document.getElementById('btn-mars').addEventListener('click', () => setFocus('mars'));
+        document.getElementById('btn-jupiter').addEventListener('click', () => setFocus('jupiter'));
+        document.getElementById('btn-saturn').addEventListener('click', () => setFocus('saturn'));
+        document.getElementById('btn-uranus').addEventListener('click', () => setFocus('uranus'));
+        document.getElementById('btn-neptune').addEventListener('click', () => setFocus('neptune'));
+
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValDisplay = document.getElementById('speed-val');
+        speedSlider.addEventListener('input', (e) => {
+            timeSpeed = parseFloat(e.target.value);
+            speedValDisplay.textContent = `${timeSpeed}x`;
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            isPaused = !isPaused;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 11. UTILITAIRES ---
+        function createOrbitLine(radius, color, parent) {
+            const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2 * Math.PI, false, 0);
+            const points = curve.getPoints(360);
+            const geometry = new THREE.BufferGeometry().setFromPoints(
+                points.map(p => new THREE.Vector3(p.x, 0, p.y))
+            );
+            const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.25 });
+            const line = new THREE.LineLoop(geometry, material);
+            parent.add(line);
+        }
+
+        function createStarfield() {
+            const starGeo = new THREE.BufferGeometry();
+            const count = 10000;
+            const positions = new Float32Array(count * 3);
+
+            for(let i = 0; i < count * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 5000000;
+            }
+
+            starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 15.0, transparent: true, opacity: 0.85 });
+            const starField = new THREE.Points(starGeo, starMat);
+            scene.add(starField);
+        }
+
+        setFocus('earth');
+        animate();
+    </script>
+</body>
+</html>
