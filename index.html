@@ -261,7 +261,7 @@
 
         // --- 1. CONSTANTES & RATIOS D'ÉCHELLE EXACTS ---
         const KM_PER_UNIT = 6371;
-
+        const root = "/src/img/";
         const EARTH_RADIUS = 1.0;                             // 12 742 km / 2 / 6371
         const MOON_RADIUS = (3474 / 2) / KM_PER_UNIT;         // ~0.2726
         const MERCURY_RADIUS = (4879 / 2) / KM_PER_UNIT;      // ~0.3829
@@ -319,52 +319,52 @@
         }
 
         const sunTexture = textureLoader.load(
-            'https://sdmntprnortheu.oaiusercontent.com/files/00000000-a280-81f4-bb47-ea5201d2f594/raw?se=2026-08-25T11%3A59%3A56Z&sp=r&sv=2026-02-06&sr=b&scid=eff4b99b-c8dc-495c-aaba-bfbb0193dfe0&skoid=5c9dda00-298b-4376-81e9-b4568c8a3c0f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-25T07%3A19%3A26Z&ske=2026-08-26T07%3A19%3A26Z&sks=b&skv=2026-02-06&sig=iDf7JHA6tEtoSoMOE4oyZ8RAae9882hEtH/HwFZJrL8%3D',
+            `${root}sun.png`,
             undefined, undefined,
             () => { sunMaterial.map = createColorFallback('#ffcc00'); sunMaterial.needsUpdate = true; }
         );
 
         const mercuryTexture = textureLoader.load(
-            'https://imgs.search.brave.com/RnYBTZdaqx3FUApYon9C637ZGRLVp2qFUNO5rzksaKs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy85/LzkyL1NvbGFyc3lz/dGVtc2NvcGVfdGV4/dHVyZV8ya19tZXJj/dXJ5LmpwZw',
+            `${root}mercury.png`,
             undefined, undefined,
             () => { mercuryMaterial.map = createColorFallback('#888888'); mercuryMaterial.needsUpdate = true; }
         );
 
         const venusTexture = textureLoader.load(
-            'https://imgs.search.brave.com/le5duks1AkQDuY8fIMyNfW9fz9CLGqZ0c0rtkyupr5E/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4u/ZnV0dXJhLXNjaWVu/Y2VzLmNvbS9zb3Vy/Y2VzL2ltYWdlcy9k/aWFwb3JhbWEvNTIx/LXZlbnVzL3ZlNy5q/cGc',
+            `${root}venus.jpg`,
             undefined, undefined,
             () => { venusMaterial.map = createColorFallback('#e3bb76'); venusMaterial.needsUpdate = true; }
         );
 
-        const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
-        const moonTexture = textureLoader.load('https://imgs.search.brave.com/Ypc98r3cD1nESOGWDPFaTD087Et8bkgpFIWWCqVpsKg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9k/L2RiL01vb25tYXBf/ZnJvbV9jbGVtZW50/aW5lX2RhdGEucG5n');
+        const earthTexture = textureLoader.load(`${root}earth.jpg`);
+        const moonTexture = textureLoader.load(`${root}moon.png`);
 
         const marsTexture = textureLoader.load(
-            'https://imgs.search.brave.com/lPtcoXC0eO6uJD7SgJrnYZ_wIAayb_pENJUi1IHBryo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9hc3Nl/dHMuc2NpZW5jZS5u/YXNhLmdvdi9keW5h/bWljaW1hZ2UvYXNz/ZXRzL3NjaWVuY2Uv/bWlzc2lvbnMvaHVi/YmxlL3JlbGVhc2Vz/LzIwMDcvMTIvU1RT/Y0ktMDFFVlQ2UE1a/UVNBRTlTNUMzSzla/MlRFTkcudGlmP3c9/MjAwMA',
+            `${root}mars.jpg`,
             undefined, undefined,
             () => { marsMaterial.map = createColorFallback('#c1440e'); marsMaterial.needsUpdate = true; }
         );
 
         const jupiterTexture = textureLoader.load(
-            'https://imgs.search.brave.com/t83OA-i8O6klGq2w_6zpjqD5A3Tn62k19NsVlz2EdV4/rs:fit:860:0:0:0/g:ce/aHR0cDovL3d3dy5h/c3Ryb3N1cmYuY29t/L2x1eG9yaW9uL0ls/bHVzdHJhdGlvbnMv/anVwaXRlci1wbGFu/aXNwaGVyZS1oc3Qt/amFuMjAxNXMuanBn',
+            `${root}jupiter.jpg`,
             undefined, undefined,
             () => { jupiterMaterial.map = createColorFallback('#b07f35'); jupiterMaterial.needsUpdate = true; }
         );
 
         const saturnTexture = textureLoader.load(
-            'VOTRE_LIEN_TEXTURE_SATURNE_ICI',
+            `${root}saturn.jpg`,
             undefined, undefined,
             () => { saturnMaterial.map = createColorFallback('#e0cda3'); saturnMaterial.needsUpdate = true; }
         );
 
         const uranusTexture = textureLoader.load(
-            'VOTRE_LIEN_TEXTURE_URANUS_ICI',
+            `${root}uranus.jpg`,
             undefined, undefined,
             () => { uranusMaterial.map = createColorFallback('#7de6ef'); uranusMaterial.needsUpdate = true; }
         );
 
         const neptuneTexture = textureLoader.load(
-            'VOTRE_LIEN_TEXTURE_NEPTUNE_ICI',
+            `${root}neptune.jpg`,
             undefined, undefined,
             () => { neptuneMaterial.map = createColorFallback('#2b65ec'); neptuneMaterial.needsUpdate = true; }
         );
